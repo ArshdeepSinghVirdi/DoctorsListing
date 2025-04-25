@@ -25,6 +25,7 @@ const Filters = ({
   const [sortBy, setSortBy] = useState(initialSortBy);
   const [searchSpecialty, setSearchSpecialty] = useState("");
 
+  // Update local state when props change (for URL sync)
   useEffect(() => {
     setConsultationType(initialConsultationType);
     setSelectedSpecialties(initialSpecialties);
@@ -39,9 +40,8 @@ const Filters = ({
   };
 
   const handleConsultationTypeChange = (type) => {
-    const newType = consultationType === type ? "" : type;
-    setConsultationType(newType);
-    onConsultationTypeChange(newType);
+    setConsultationType(type);
+    onConsultationTypeChange(type);
   };
 
   const handleSpecialtyChange = (specialty) => {
@@ -54,9 +54,8 @@ const Filters = ({
   };
 
   const handleSortChange = (sort) => {
-    const newSort = sortBy === sort ? "" : sort;
-    setSortBy(newSort);
-    onSortChange(newSort);
+    setSortBy(sort);
+    onSortChange(sort);
   };
 
   const clearFilters = () => {
@@ -67,7 +66,6 @@ const Filters = ({
     onClearAll();
   };
 
-  // Memoize filtered specialties to prevent unnecessary recalculations
   const filteredSpecialties = useMemo(() => {
     if (!Array.isArray(allSpecialties)) return [];
 
@@ -82,7 +80,7 @@ const Filters = ({
     <div className="bg-white rounded shadow p-4" data-testid="filters">
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-lg font-medium text-gray-800">Filters</h2>
-        <button 
+        <button
           onClick={clearFilters}
           className="flex items-center text-sm text-blue-600 hover:text-blue-800"
           data-testid="clear-all-filters"
@@ -92,7 +90,7 @@ const Filters = ({
         </button>
       </div>
 
-      {/* Specialties */}
+      {/* Specialties Section */}
       <div className="mb-6">
         <div
           className="flex justify-between items-center cursor-pointer mb-3"
@@ -121,33 +119,6 @@ const Filters = ({
                 data-testid="specialty-search"
               />
             </div>
-
-            {/* Selected specialties always visible when searching */}
-            {selectedSpecialties.length > 0 && searchSpecialty && (
-              <div className="mb-2 pb-2 border-b border-gray-200">
-                <p className="text-xs text-gray-500 mb-1">Selected:</p>
-                {selectedSpecialties.map((specialty, index) => (
-                  <div
-                    key={`selected-${index}`}
-                    className="flex items-center mb-2 bg-blue-50 p-1 rounded"
-                  >
-                    <input
-                      id={`selected-specialty-${index}`}
-                      type="checkbox"
-                      checked={true}
-                      onChange={() => handleSpecialtyChange(specialty)}
-                      className="w-4 h-4 text-blue-600"
-                    />
-                    <label
-                      htmlFor={`selected-specialty-${index}`}
-                      className="ml-2 text-sm text-gray-700 cursor-pointer"
-                    >
-                      {specialty}
-                    </label>
-                  </div>
-                ))}
-              </div>
-            )}
 
             <div className="max-h-48 overflow-y-auto">
               {filteredSpecialties.length > 0 ? (
@@ -183,7 +154,7 @@ const Filters = ({
 
       <hr className="my-4" />
 
-      {/* Consultation Mode */}
+      {/* Mode of consultation */}
       <div className="mb-6">
         <div
           className="flex justify-between items-center cursor-pointer mb-3"
@@ -252,7 +223,7 @@ const Filters = ({
 
       <hr className="my-4" />
 
-      {/* Sort Options */}
+      {/* Sort By */}
       <div className="mb-6">
         <div
           className="flex justify-between items-center cursor-pointer mb-3"

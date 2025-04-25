@@ -30,6 +30,10 @@ function App() {
         }
         
         const data = await response.json();
+        if (data.length > 0) {
+          console.log("Sample doctor data:", data[0]);
+        }
+        
         setDoctors(data);
         setFilteredDoctors(data);
       } catch (err) {
@@ -44,51 +48,106 @@ function App() {
   
   useEffect(() => {
     if (doctors.length > 0) {
+      console.log("Filtering with:", {
+        search: getSearchParam('search'),
+        consultationType: getSearchParam('consultationType'),
+        specialties: getSearchParam('specialties')?.split(',').filter(Boolean),
+        sortBy: getSearchParam('sortBy')
+      });
+
       let filtered = [...doctors];
       const searchQuery = getSearchParam('search');
       if (searchQuery) {
-        filtered = filtered.filter(doctor => 
-          doctor.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
+        const lowerCaseQuery = searchQuery.toLowerCase();
+        filtered = filtered.filter(doctor => {
+          const nameMatch = doctor.name?.toLowerCase().includes(lowerCaseQuery);
+          
+          let specialtyMatch = false;
+          if (Array.isArray(doctor.specialty)) {
+            specialtyMatch = doctor.specialty.some(s => 
+              s?.toLowerCase().includes(lowerCaseQuery)
+            );
+          } else if (typeof doctor.specialty === 'string') {
+            specialtyMatch = doctor.specialty.toLowerCase().includes(lowerCaseQuery);
+          }
+          
+          return nameMatch || specialtyMatch;
+        });
       }
-      
+   
       const consultationType = getSearchParam('consultationType');
       if (consultationType) {
         filtered = filtered.filter(doctor => {
+
           const consultationMode = doctor.consultationMode || [];
+          
           if (consultationType === 'video') {
-            return consultationMode.includes('Video Consult');
+            if (Array.isArray(consultationMode)) {
+              return consultationMode.some(mode => 
+                mode === 'Video Consult' || mode === 'video' || mode?.toLowerCase().includes('video')
+              );
+            } else if (typeof consultationMode === 'string') {
+              return consultationMode === 'Video Consult' || 
+                     consultationMode === 'video' || 
+                     consultationMode.toLowerCase().includes('video');
+            }
           } else if (consultationType === 'clinic') {
-            return consultationMode.includes('In Clinic');
+            if (Array.isArray(consultationMode)) {
+              return consultationMode.some(mode => 
+                mode === 'In Clinic' || mode === 'clinic' || mode?.toLowerCase().includes('clinic')
+              );
+            } else if (typeof consultationMode === 'string') {
+              return consultationMode === 'In Clinic' || 
+                     consultationMode === 'clinic' || 
+                     consultationMode.toLowerCase().includes('clinic');
+            }
           }
-          return true;
+          return false;
         });
       }
     
       const specialties = getSearchParam('specialties')?.split(',').filter(Boolean) || [];
       if (specialties.length > 0) {
-        filtered = filtered.filter(doctor => 
-          doctor.specialty && specialties.some(specialty => 
-            doctor.specialty.includes(specialty)
-          )
-        );
+        filtered = filtered.filter(doctor => {
+          if (!doctor.specialty) return false;
+        
+          if (Array.isArray(doctor.specialty)) {
+            return specialties.some(selectedSpecialty => 
+              doctor.specialty.some(docSpecialty => 
+                docSpecialty?.toLowerCase() === selectedSpecialty.toLowerCase()
+              )
+            );
+          } else if (typeof doctor.specialty === 'string') {
+            return specialties.some(selectedSpecialty => 
+              doctor.specialty.toLowerCase() === selectedSpecialty.toLowerCase()
+            );
+          }
+          
+          return false;
+        });
       }
-    
+  
       const sortBy = getSearchParam('sortBy');
       if (sortBy) {
         filtered.sort((a, b) => {
           if (sortBy === 'fees') {
-            return (a.fees || 0) - (b.fees || 0);
+            const feeA = typeof a.fees === 'number' ? a.fees : 0;
+            const feeB = typeof b.fees === 'number' ? b.fees : 0;
+            return feeA - feeB;
           } else if (sortBy === 'experience') {
-            return (b.experience || 0) - (a.experience || 0);
+            const expA = typeof a.experience === 'number' ? a.experience : 0;
+            const expB = typeof b.experience === 'number' ? b.experience : 0;
+            return expB - expA;
           }
           return 0;
         });
       }
+    
+      console.log(`Filtered from ${doctors.length} to ${filtered.length} doctors`);
       
       setFilteredDoctors(filtered);
     }
-  }, [doctors, searchParams]);
+  }, [doctors, searchParams, getSearchParam]);
   
   const handleSearch = (query) => {
     if (query) {
@@ -129,9 +188,23 @@ function App() {
     removeSearchParam('sortBy');
   };
 
-  const allSpecialties = doctors.length > 0 
-    ? [...new Set(doctors.flatMap(doctor => doctor.specialty || []))]
-    : [];
+  const allSpecialties = React.useMemo(() => {
+    if (!doctors.length) return [];
+    
+    const specialtiesSet = new Set();
+    
+    doctors.forEach(doctor => {
+      if (Array.isArray(doctor.specialty)) {
+        doctor.specialty.forEach(s => {
+          if (s) specialtiesSet.add(s);
+        });
+      } else if (typeof doctor.specialty === 'string') {
+        specialtiesSet.add(doctor.specialty);
+      }
+    });
+    
+    return Array.from(specialtiesSet).sort();
+  }, [doctors]);
   
   if (error) {
     return (

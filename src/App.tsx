@@ -45,8 +45,6 @@ function App() {
   useEffect(() => {
     if (doctors.length > 0) {
       let filtered = [...doctors];
-      
-      // Apply search filter
       const searchQuery = getSearchParam('search');
       if (searchQuery) {
         filtered = filtered.filter(doctor => 
@@ -54,7 +52,6 @@ function App() {
         );
       }
       
-      // Apply consultation type filter
       const consultationType = getSearchParam('consultationType');
       if (consultationType) {
         filtered = filtered.filter(doctor => {
@@ -67,8 +64,7 @@ function App() {
           return true;
         });
       }
-      
-      // Apply specialties filter
+    
       const specialties = getSearchParam('specialties')?.split(',').filter(Boolean) || [];
       if (specialties.length > 0) {
         filtered = filtered.filter(doctor => 
@@ -77,8 +73,7 @@ function App() {
           )
         );
       }
-      
-      // Apply sorting
+    
       const sortBy = getSearchParam('sortBy');
       if (sortBy) {
         filtered.sort((a, b) => {
@@ -133,8 +128,7 @@ function App() {
     removeSearchParam('specialties');
     removeSearchParam('sortBy');
   };
-  
-  // Get unique specialties from all doctors
+
   const allSpecialties = doctors.length > 0 
     ? [...new Set(doctors.flatMap(doctor => doctor.specialty || []))]
     : [];

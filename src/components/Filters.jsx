@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, X, Search } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { ChevronDown, ChevronUp, Search } from 'lucide-react';
 
 const Filters = ({ 
   allSpecialties, 
@@ -64,31 +64,23 @@ const Filters = ({
     onClearAll();
   };
   
-  const filteredSpecialties = (allSpecialties || []).filter(specialty => 
-    typeof specialty === 'string' && specialty.toLowerCase().includes(searchSpecialty.toLowerCase())
-  );
-  
-  const hasActiveFilters = consultationType || selectedSpecialties.length > 0 || sortBy;
+  // Memoize filtered specialties to prevent unnecessary recalculations
+  const filteredSpecialties = useMemo(() => {
+    if (!Array.isArray(allSpecialties)) return [];
+    
+    return allSpecialties.filter(specialty => 
+      typeof specialty === 'string' && specialty.toLowerCase().includes(searchSpecialty.toLowerCase())
+    );
+  }, [allSpecialties, searchSpecialty]);
   
   return (
-    <div className="bg-white rounded-lg shadow-md p-4" data-testid="filters">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-lg font-semibold text-gray-800">Filters</h2>
-        {hasActiveFilters && (
-          <button 
-            onClick={clearFilters}
-            className="text-sm text-blue-600 hover:text-blue-800"
-            data-testid="clear-all"
-          >
-            Clear All
-          </button>
-        )}
-      </div>
+    <div className="bg-white rounded shadow p-4" data-testid="filters">
+      <h2 className="text-lg font-medium text-gray-800 mb-6">Filters</h2>
       
       {/* Sort Options */}
-      <div className="mb-4">
+      <div className="mb-6">
         <div 
-          className="flex justify-between items-center cursor-pointer py-2"
+          className="flex justify-between items-center cursor-pointer mb-3"
           onClick={() => toggleSection('sort')}
         >
           <h3 className="font-medium text-gray-800">Sort by</h3>
@@ -96,8 +88,8 @@ const Filters = ({
         </div>
         
         {expandedSections.sort && (
-          <div className="mt-2 filter-section">
-            <div className="flex items-center mb-2">
+          <div className="mt-2">
+            <div className="flex items-center mb-3">
               <input
                 id="sort-fees"
                 type="radio"
@@ -131,9 +123,9 @@ const Filters = ({
       <hr className="my-4" />
       
       {/* Specialties */}
-      <div className="mb-4">
+      <div className="mb-6">
         <div 
-          className="flex justify-between items-center cursor-pointer py-2"
+          className="flex justify-between items-center cursor-pointer mb-3"
           onClick={() => toggleSection('specialties')}
         >
           <h3 className="font-medium text-gray-800">Specialities</h3>
@@ -141,7 +133,7 @@ const Filters = ({
         </div>
         
         {expandedSections.specialties && (
-          <div className="mt-2 filter-section">
+          <div className="mt-2">
             <div className="relative mb-3">
               <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
                 <Search className="h-4 w-4 text-gray-500" />
@@ -150,27 +142,31 @@ const Filters = ({
                 type="text"
                 value={searchSpecialty}
                 onChange={(e) => setSearchSpecialty(e.target.value)}
-                className="block w-full pl-10 pr-3 py-2 text-sm text-gray-900 border border-gray-300 rounded-md"
+                className="block w-full pl-10 pr-3 py-2 text-sm text-gray-500 border border-gray-300 rounded-md"
                 placeholder="Search specialties"
               />
             </div>
             
             <div className="max-h-48 overflow-y-auto">
-              {filteredSpecialties.map((specialty, index) => (
-                <div key={index} className="flex items-center mb-2 specialty-item rounded-md p-1">
-                  <input
-                    id={`specialty-${index}`}
-                    type="checkbox"
-                    checked={selectedSpecialties.includes(specialty)}
-                    onChange={() => handleSpecialtyChange(specialty)}
-                    className="w-4 h-4 text-blue-600"
-                    data-testid={`filter-specialty-${specialty.toLowerCase().replace(/\s+/g, '')}`}
-                  />
-                  <label htmlFor={`specialty-${index}`} className="ml-2 text-sm text-gray-700">
-                    {specialty}
-                  </label>
-                </div>
-              ))}
+              {filteredSpecialties.length > 0 ? (
+                filteredSpecialties.map((specialty, index) => (
+                  <div key={index} className="flex items-center mb-2">
+                    <input
+                      id={`specialty-${index}`}
+                      type="checkbox"
+                      checked={selectedSpecialties.includes(specialty)}
+                      onChange={() => handleSpecialtyChange(specialty)}
+                      className="w-4 h-4 text-blue-600"
+                      data-testid={`filter-specialty-${specialty.toLowerCase().replace(/\s+/g, '')}`}
+                    />
+                    <label htmlFor={`specialty-${index}`} className="ml-2 text-sm text-gray-700 cursor-pointer">
+                      {specialty}
+                    </label>
+                  </div>
+                ))
+              ) : (
+                <p className="text-sm text-gray-500 py-2">No specialties found</p>
+              )}
             </div>
           </div>
         )}
@@ -181,7 +177,7 @@ const Filters = ({
       {/* Consultation Mode */}
       <div>
         <div 
-          className="flex justify-between items-center cursor-pointer py-2"
+          className="flex justify-between items-center cursor-pointer mb-3"
           onClick={() => toggleSection('consultation')}
         >
           <h3 className="font-medium text-gray-800">Mode of consultation</h3>
@@ -189,8 +185,8 @@ const Filters = ({
         </div>
         
         {expandedSections.consultation && (
-          <div className="mt-2 filter-section">
-            <div className="flex items-center mb-2">
+          <div className="mt-2">
+            <div className="flex items-center mb-3">
               <input
                 id="video-consult"
                 type="radio"
@@ -204,7 +200,7 @@ const Filters = ({
               </label>
             </div>
             
-            <div className="flex items-center mb-2">
+            <div className="flex items-center mb-3">
               <input
                 id="in-clinic"
                 type="radio"
